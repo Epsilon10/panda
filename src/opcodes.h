@@ -1,0 +1,3 @@
+#define PVM_CONST_INT 0
+#define PVM_CONST_STRING 1
+#define PVM_CONST_FLOAT = 2
