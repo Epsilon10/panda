@@ -52,12 +52,22 @@ int load_program(pvm_vm_t* vm, const* char bytecode) {
 
     for (uint8_t opcode, i = 0; i < num_of_funcs; i++) {
         func = (pvm_func_t*) PVM_MALLOC(sizeof(pvm_func_t));
+        size_t stack = 0;
+        uint32_t* name = PVM_PTR(uint32_t*, program->consts[*pos.u16++])
+        func->name.size = *name;
+        func->name.data = (uint8_t*) &name[1];
+        func->num_locals = *pos.u8++;
 
+        func->code = pos.u8;
         while ((opcode = *pos.u8++)) {
             switch (opcode) {
-                
+                case PVM_OP_CALL: case PVM_OP_BIF:
+                    value = *pos.u8++;
+                case PVM_OP_JMP:          
             }
         }
+
+        program->funcs[i] = func;
     }
 
 }   
