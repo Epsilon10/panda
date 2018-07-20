@@ -19,7 +19,7 @@ pvm_actor_t* pvm_actor_spawn(pvm_func_t* func, uint8_t argc, pvm_value* args) {
     pvm_ctx_t* ctx = &actor->ctx;
     actor->is_active = 0;
     actor->refc = 1;
-    actor->mailbox.head = actor->mailbox.tail = pvm_msgq_node_t(NULL);
+    actor->mailbox.head = actor->mailbox.tail = pvm_msgq_node(NULL);
 
     pvm_gc_init(actor);
     ctx->ip.u8 = func->code;
@@ -34,7 +34,6 @@ pvm_actor_t* pvm_actor_spawn(pvm_func_t* func, uint8_t argc, pvm_value* args) {
 }
 
 void pvm_actor_send(pvm_actor_t* dest_actor, pvm_value value) {
-    pvm_value send_val = 
     pvm_msgq_node_t* node = pvm_msgq_node(value);
     pvm_msgq_node_t* prev = pvm_atomic_xchg(&dest_actor->mailbox.head, node, PVM_ATOMIC_ACQ_REL);
     pvm_atomic_store(&prev->next, node, PVM_ATOMIC_RELEASE);
@@ -44,7 +43,17 @@ void pvm_actor_send(pvm_actor_t* dest_actor, pvm_value value) {
     }
 }
 
-nk_value pvm_actor_recv(pvm_actor_t* actor) {
+pvm_value pvm_actor_recv(pvm_actor_t* actor) {
+    pvm_msgq_node_t* tail = actor->mailbox.tail;
+    pvm_msgq_node_t* next = pvm_atomic_load(&tail->next, PVM_ATOMIC_RELAXED);
 
+    if (next == NULL) {
+        pvm_atomic_comp_xchg_weak(&actor->active, 1, 0, PVM_ATOMIC_RELAXED, PVM_ATOMIC_RELAXED))  
+        return PVM_NULL;
+    }
+    pvm_value value = next->value;
+    pvm_atomic_fence(PVM_ATOMIC_ACQUIRE);
+    PVM_FREE((void*) tail);
+    return value;
 }
 

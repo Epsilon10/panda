@@ -61,7 +61,7 @@ int load_program(pvm_vm_t* vm, const* char bytecode) {
         func->code = pos.u8;
         while ((opcode = *pos.u8++)) {
             switch (opcode) {
-                case PVM_OP_CALL: case PVM_OP_BIF:
+                case PVM_CALL: case PVM_LOAD_FUNC:
                     value = *pos.u8++;
                 case PVM_OP_JMP:          
             }

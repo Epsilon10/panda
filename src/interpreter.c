@@ -39,11 +39,8 @@ bool pvm_actor_interpret(pvm_actor_t* actor, pvm_vm_t* vm) {
         PVM_OP_CASE(PVM_SPAWN_PROC, {
             const uint8_t func_args = *ctx->ip.u8++;
             ctx->num_args = func_args;
-            pvm_func_t* func = PVM_PTR(pvm_func_t*, ctx->sp[-(ctx->num_args)]);
-            pvm_value* args = (pvm_value*) PVM_MALLOC(sizeof(pvm_value));
-            for (uint8_t i = 0; i < ctx->num_args; i++) {
-                args[i] = PVM_POP();
-            }
+            pvm_func_t* func = PVM_PTR(pvm_func_t*, ctx->sp[-(ctx->num_args) - 1]);
+            pvm_value* args = &ctx->sp[-(ctx->num_args)];
             pvm_actor_t* actor = pvm_actor_spawn(func, ctx->num_args, args);
             PVM_PUSH(PVM_VALUE(PVM_TYPE_ACTOR, (uintptr_t) actor));
         })
@@ -55,7 +52,7 @@ bool pvm_actor_interpret(pvm_actor_t* actor, pvm_vm_t* vm) {
             PVM_PUSH(ctx->ip);
 
             ctx->num_args = func_args;
-            pvm_func_t* func = PVM_PTR(pvm_func_t*, ctx->sp[-(ctx->num_args)]);
+            pvm_func_t* func = PVM_PTR(pvm_func_t*, ctx->sp[-(ctx->num_args) - 1]);
 
             for (int i = 0; i < func->num_locals, i++) {
                 PVM_PUSH(NULL);
@@ -69,13 +66,36 @@ bool pvm_actor_interpret(pvm_actor_t* actor, pvm_vm_t* vm) {
             PVM_PUSH(value);
         }
 
+        PVM_OP_CASE(PVM_ADD_I32, {
+            ctx->ip.u8++;
+            uint32_t* a = PVM_PTR(uint32_t*, PVM_POP();
+            uint32_t* b = PVM_POP(uint32_t*, PVM_POP());
+            uint32_t* result;
+            *result = *a + *b;
+            PVM_PUSH(PVM_VALUE(PVM_TYPE_INT, (uintptr_t) data))
+        })
+
+        
+
         PVM_OP_CASE(PVM_SEND, {
             ctx->ip.u8++;
             pvm_value addr = PVM_POP();
             pvm_value value = PVM_POP();
             pvm_actor_t* actor = PVM_PTR(pvm_actor_t*, addr);
-            pvm_actor_send(actor, value);
+            pvm_actor_send(actor);
+
         })
+
+        PVM_OP_CASE(PVM_RECV, {
+            ctx->ip.u8++;
+            pvm_value value = pvm_actor_recv(actor);
+            if (!pvm_is_null(value)) {
+                PVM_PUSH(value);
+            }
+
+        })
+
+
 
         
 
