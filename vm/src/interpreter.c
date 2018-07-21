@@ -61,7 +61,7 @@ bool pvm_actor_interpret(pvm_actor_t* actor, pvm_vm_t* vm) {
             ctx->ip = func->ip; // perform jump to functions bytecode
         })
 
-        PVM_OP_CASE(PVM_LOAD_I32, {
+        PVM_OP_CASE(PVM_CONST_I32, {
             const uint32_t value = *ctx->ip.u32++;
             PVM_PUSH(value);
         }
@@ -75,7 +75,7 @@ bool pvm_actor_interpret(pvm_actor_t* actor, pvm_vm_t* vm) {
             PVM_PUSH(PVM_VALUE(PVM_TYPE_INT, (uintptr_t) data))
         })
 
-
+        
 
         PVM_OP_CASE(PVM_SEND, {
             ctx->ip.u8++;
@@ -92,12 +92,6 @@ bool pvm_actor_interpret(pvm_actor_t* actor, pvm_vm_t* vm) {
             if (!pvm_is_null(value)) {
                 PVM_PUSH(value);
             }
-
-        })
-
-        PVM_OP_CASE(PVM_JMP, {
-            const uint16_t addr = *ctx->ip.u16++;
-            ctx->ip.u8 = addr;
 
         })
 
