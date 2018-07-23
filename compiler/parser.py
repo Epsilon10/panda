@@ -1,4 +1,4 @@
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF'
+INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF = ('INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV','(', ')', 'EOF')
 
 
 class Token():
@@ -16,16 +16,14 @@ class Token():
         return self.__str__()
 
 
-class Interpreter(object):
+class Lexer():
     def __init__(self, text):
-
         self.text = text
         self.pos = 0
-        self.current_token = None
         self.current_char = self.text[self.pos]
 
     def error(self):
-        raise Exception('Error parsing input')
+        raise Exception('Invalid syntax')
 
     def advance(self):
         self.pos += 1
@@ -63,36 +61,71 @@ class Interpreter(object):
                 self.advance()
                 return Token(MINUS, '-')
 
+            if self.current_char == '*':
+                self.advance()
+                return Token(MUL, '*')
+            
+            if self.current_char == '/':
+                self.advance()
+                return Token(DIV, '/')
+
             self.error()
 
         return Token(EOF, None)
 
+    ##########################################################
+    # Parser code                              #
+    ##########################################################
+class Parser():
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+
     def eat(self, token_type):
         if self.current_token.type == token_type:
-            self.current_token = self.get_next_token()
+            self.current_token = self.lexer.get_next_token()
         else:
-            self.error()
+            self.lexer.error()
+    
+    def factor(self):
+        token = self.current_token
+
+        if token.type == INTEGER:
+            self.eat(INTEGER)
+            return token.value
+        elif token.type == LPAREN:
+            self.eat(LPAREN)
+            result = self.term()
+            self.eat(RPAREN)
+            return result
+    
+    def term(self):
+        result = self.factor()
+
+        while self.current_token.type in (MUL, DIV):
+            token = self.current_token
+            if token.type == MUL:
+                self.eat(MUL)
+                result = result * self.factor()
+            elif token.type == DIV:
+                self.eat(DIV)
+                result = result / self.factor()
+
+        return result
 
     def expr(self):
+        """Arithmetic expression parser / interpreter."""
 
-        self.current_token = self.get_next_token()
+        result = self.term()
+        while self.current_token.type in (PLUS, MINUS):
+            token = self.current_token
+            if token.type == PLUS:
+                self.eat(PLUS)
+                result = result + self.term()
+            elif token.type == MINUS:
+                self.eat(MINUS)
+                result = result - self.term()
 
-        left = self.current_token
-        self.eat(INTEGER)
-
-        op = self.current_token
-        if op.type == PLUS:
-            self.eat(PLUS)
-        else:
-            self.eat(MINUS)
-
-        right = self.current_token
-        self.eat(INTEGER)
-
-        if op.type == PLUS:
-            result = left.value + right.value
-        else:
-            result = left.value - right.value
         return result
 
 
@@ -104,8 +137,9 @@ def main():
             break
         if not text:
             continue
-        interpreter = Interpreter(text)
-        result = interpreter.expr()
+        lexer = Lexer(text)
+        parser = Parser(lexer)
+        result = parser.expr()
         print(result)
 
 
